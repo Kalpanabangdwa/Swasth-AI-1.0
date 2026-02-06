@@ -1,0 +1,277 @@
+/* Report Scanner Styles */
+.scanner-container {
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.scanner-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.scanner-header h1 {
+    font-size: 2.5rem;
+    color: #1e3a8a;
+    margin-bottom: 0.5rem;
+}
+
+.scanner-header p {
+    color: #64748b;
+}
+
+.scanner-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Upload Section */
+.upload-section {
+    width: 100%;
+}
+
+.drop-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 3rem;
+    text-align: center;
+    transition: all 0.3s;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-active {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.upload-icon {
+    color: #3b82f6;
+    margin-bottom: 1rem;
+}
+
+.browse-btn {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.8rem 1.5rem;
+    background: #e0f2fe;
+    color: #0284c7;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.browse-btn:hover {
+    background: #bae6fd;
+}
+
+/* File Preview */
+.file-preview {
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.analyze-btn {
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.analyze-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+/* Result Section */
+.result-section {
+    padding: 2rem;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.summary {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    color: #334155;
+}
+
+.metrics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.metric-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.metric-name {
+    font-weight: 600;
+    color: #475569;
+}
+
+.metric-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-badge.normal {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.low {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.high {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+/* Diet Grid */
+.diet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.deficiency-card {
+    background: #fff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    background: linear-gradient(to bottom right, #eff6ff, #fff);
+}
+
+.deficiency-card h4 {
+    color: #1e3a8a;
+    margin-bottom: 0.5rem;
+}
+
+.impact-text {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+.food-list h5 {
+    color: #3b82f6;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.food-list ul {
+    padding-left: 1.2rem;
+    color: #334155;
+}
+
+.food-list li {
+    margin-bottom: 0.25rem;
+}
+
+.disclaimer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.9rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.scanning-animation {
+    text-align: center;
+    padding: 3rem;
+}
+
+.scan-line {
+    height: 4px;
+    width: 100%;
+    background: linear-gradient(to right, transparent, #3b82f6, transparent);
+    animation: scan 1.5s infinite;
+    margin-bottom: 1.5rem;
+}
+
+@keyframes scan {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
