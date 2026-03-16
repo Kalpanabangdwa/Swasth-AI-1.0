@@ -9,8 +9,7 @@ import {
     FileText,
     User,
     Bell,
-    Heart,
-    Baby
+    Heart
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import './Layout.css';
@@ -61,10 +60,6 @@ const Layout = () => {
                         <User size={20} />
                         <span>Profile</span>
                     </NavLink>
-                    <NavLink to="/maternity" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                        <Baby size={20} />
-                        <span>Maternity</span>
-                    </NavLink>
                     <NavLink to="/mental-health" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                         <Heart size={20} />
                         <span>Mental Health</span>
@@ -100,13 +95,8 @@ const Layout = () => {
                                 zIndex: 100
                             }}>
                                 <h4>Notifications</h4>
-                                <div className="notif-item" style={{ fontSize: '0.9rem', padding: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <strong>Appointment Reminder</strong><br />
-                                    <span style={{ fontSize: '0.8rem', color: '#ccc' }}>Dr. Sarah in 1 hour</span>
-                                </div>
-                                <div className="notif-item" style={{ fontSize: '0.9rem', padding: '0.5rem' }}>
-                                    <strong>Report Ready</strong><br />
-                                    <span style={{ fontSize: '0.8rem', color: '#ccc' }}>Blood test results analyzed</span>
+                                <div className="notif-item" style={{ fontSize: '0.9rem', padding: '0.5rem', color: '#ccc', textAlign: 'center' }}>
+                                    No new notifications
                                 </div>
                             </div>
                         </div>

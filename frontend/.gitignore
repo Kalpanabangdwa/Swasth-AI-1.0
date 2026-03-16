@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Env (API keys — do not commit)
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +27,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Cursor workspace-exported assets (can exceed Windows path limits)
+src/assets/c__Users_*Cursor_User_workspaceStorage*_images_*.png

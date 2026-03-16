@@ -239,6 +239,33 @@
     color: var(--accent-primary);
 }
 
+/* Medical Essentials - Editable Inputs */
+.stat-box.stat-input input,
+.stat-box.stat-input select {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.75rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    width: 100%;
+}
+
+.stat-box.stat-input input::placeholder {
+    color: var(--text-muted);
+}
+
+.stat-box.stat-input input:focus,
+.stat-box.stat-input select:focus {
+    outline: none;
+    border-color: rgba(52, 211, 153, 0.5);
+}
+
+.stat-box.stat-input select {
+    cursor: pointer;
+}
+
 /* Settings */
 .setting-item {
     display: flex;

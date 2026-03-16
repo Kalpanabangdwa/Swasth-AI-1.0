@@ -1,4 +1,33 @@
-/* Existing styles... */
+/* ═══════════════════════════════════════════════
+   APPOINTMENTS PAGE STYLES
+═══════════════════════════════════════════════ */
+
+.appointments-container { position: relative; }
+.appts-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.75rem; }
+.appts-header h1 { font-size: 1.9rem; font-weight: 800; color: #e2e8f0; margin-bottom: 0.3rem; }
+.appts-header p  { font-size: 0.95rem; color: #64748b; }
+
+.primary-btn { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg,#34d399,#059669); color: #0f172a; font-weight: 800; font-size: 0.9rem; padding: 12px 22px; border: none; border-radius: 0.75rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(52,211,153,0.35); font-family: inherit; }
+.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(52,211,153,0.5); }
+.primary-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.secondary-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; padding: 11px 20px; border-radius: 0.75rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.secondary-btn:hover { background: rgba(255,255,255,0.1); }
+
+/* ── Improved Tabs ── */
+.appt-tabs-wrap { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.07); padding: 0.4rem; border-radius: 1rem; width: fit-content; }
+.appt-tab { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1.4rem; border-radius: 0.65rem; font-size: 0.88rem; font-weight: 600; color: #64748b; background: transparent; border: none; cursor: pointer; transition: all 0.25s ease; font-family: inherit; }
+.appt-tab:hover { color: #e2e8f0; background: rgba(255,255,255,0.04); }
+.appt-tab--active { background: linear-gradient(135deg,rgba(52,211,153,0.2),rgba(5,150,105,0.15)); color: #34d399; border: 1px solid rgba(52,211,153,0.3); box-shadow: 0 0 16px rgba(52,211,153,0.12); }
+.tab-count { background: rgba(255,255,255,0.1); border-radius: 100px; padding: 1px 8px; font-size: 0.72rem; font-weight: 700; min-width: 22px; text-align: center; }
+.appt-tab--active .tab-count { background: rgba(52,211,153,0.2); color: #34d399; }
+
+.appt-past { opacity: 0.65; }
+.delete-btn { color: #f43f5e !important; }
+.delete-btn:hover { background: rgba(244,63,94,0.1) !important; }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 4rem 2rem; border-radius: 1.25rem; text-align: center; color: #475569; }
+.empty-state h3 { font-size: 1.15rem; color: #64748b; font-weight: 700; }
+.empty-state p  { font-size: 0.88rem; color: #475569; max-width: 280px; }
 
 .modal-overlay {
     position: fixed;

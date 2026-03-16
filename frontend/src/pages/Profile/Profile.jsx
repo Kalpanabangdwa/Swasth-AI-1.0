@@ -22,6 +22,12 @@ const Profile = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleMedicalUpdate = (field, value) => {
+        const updated = { ...formData, [field]: value };
+        setFormData(updated);
+        updateUser(updated);
+    };
+
     return (
         <div className="profile-container fade-in">
             {/* Profile Header Card */}
@@ -155,21 +161,50 @@ const Profile = () => {
                     <div className="section-card glass-panel">
                         <h3>Medical Essentials</h3>
                         <div className="medical-stats">
-                            <div className="stat-box">
+                            <div className="stat-box stat-input">
                                 <span className="label">Age</span>
-                                <span className="value">{user.age}</span>
+                                <input
+                                    type="number"
+                                    placeholder="Age"
+                                    value={formData.age}
+                                    onChange={(e) => handleMedicalUpdate('age', e.target.value)}
+                                />
                             </div>
-                            <div className="stat-box">
+                            <div className="stat-box stat-input">
                                 <span className="label">Blood</span>
-                                <span className="value">{user.bloodGroup}</span>
+                                <select
+                                    name="bloodGroup"
+                                    value={formData.bloodGroup}
+                                    onChange={(e) => handleMedicalUpdate('bloodGroup', e.target.value)}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
                             </div>
-                            <div className="stat-box">
+                            <div className="stat-box stat-input">
                                 <span className="label">Height</span>
-                                <span className="value">{user.height}</span>
+                                <input
+                                    type="text"
+                                    placeholder="Height (cm)"
+                                    value={formData.height}
+                                    onChange={(e) => handleMedicalUpdate('height', e.target.value)}
+                                />
                             </div>
-                            <div className="stat-box">
+                            <div className="stat-box stat-input">
                                 <span className="label">Weight</span>
-                                <span className="value">{user.weight}</span>
+                                <input
+                                    type="text"
+                                    placeholder="Weight (kg)"
+                                    value={formData.weight}
+                                    onChange={(e) => handleMedicalUpdate('weight', e.target.value)}
+                                />
                             </div>
                         </div>
                     </div>

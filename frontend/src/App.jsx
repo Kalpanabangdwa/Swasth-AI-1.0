@@ -8,7 +8,6 @@ import DietPlanner from './pages/Diet/DietPlanner';
 import ReportScanner from './pages/Reports/ReportScanner';
 import Profile from './pages/Profile/Profile';
 import MentalHealth from './pages/MentalHealth/MentalHealth';
-import Maternity from './pages/Maternity/Maternity';
 import Login from './pages/Auth/Login';
 
 import { UserProvider, useUser } from './context/UserContext';
@@ -42,7 +41,6 @@ function App() {
             <Route path="scan-report" element={<ReportScanner />} />
             <Route path="profile" element={<Profile />} />
             <Route path="mental-health" element={<MentalHealth />} />
-            <Route path="maternity" element={<Maternity />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
