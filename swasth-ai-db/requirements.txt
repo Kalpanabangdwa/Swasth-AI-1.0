@@ -1,0 +1,7 @@
+databricks-genai-inference
+databricks-vectorsearch
+mlflow
+pandas
+numpy
+faker
+requests

@@ -2,3 +2,12 @@ fastapi
 uvicorn
 python-multipart
 httpx
+pymupdf
+requests
+pydantic
+python-dotenv
+sqlalchemy
+cryptography
+reportlab
+cachetools
+email-validator
