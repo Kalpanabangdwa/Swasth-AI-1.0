@@ -236,6 +236,12 @@ const ReportScanner = () => {
     const [viewReport, setViewReport]   = useState(null); // report being viewed in analysis panel
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType]   = useState('All');
+    
+    // New states for Text Paste and HF API
+    const [inputType, setInputType]     = useState('file'); // 'file' | 'text'
+    const [textInput, setTextInput]     = useState('');
+    const [loadingMessage, setLoadingMessage] = useState('');
+    
     const inputRef = useRef();
 
     /* Drag handlers */
@@ -250,6 +256,128 @@ const ReportScanner = () => {
         if (f) handleFile(f);
     };
     const handleFileSelect = (e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); };
+
+    /* Hugging Face AI cold-start logic */
+    const summarizeReport = async (reportText) => {
+        setAnalyzing(true);
+        setLoadingMessage('Waking up AI model...');
+        
+        const chunkText = (text, maxChars = 3500) => {
+            if (!text) return [""];
+            if (text.length <= maxChars) return [text];
+
+            // Prefer paragraph-ish splits to keep context coherent.
+            const paras = String(text).split(/\n{2,}/);
+            const chunks = [];
+            let current = "";
+
+            for (const p of paras) {
+                const candidate = current ? `${current}\n\n${p}` : p;
+                if (candidate.length > maxChars && current) {
+                    chunks.push(current);
+                    current = p;
+                } else {
+                    current = candidate;
+                }
+            }
+
+            if (current) chunks.push(current);
+
+            // Safety fallback: split any still-too-large chunk.
+            const safe = [];
+            for (const c of chunks) {
+                if (c.length <= maxChars) safe.push(c);
+                else {
+                    for (let i = 0; i < c.length; i += maxChars) {
+                        safe.push(c.slice(i, i + maxChars));
+                    }
+                }
+            }
+            return safe;
+        };
+
+        const chunks = chunkText(reportText);
+        const summaries = [];
+
+        for (let i = 0; i < chunks.length; i++) {
+            let attempts = 0;
+
+            while (attempts < 3) {
+                try {
+                    setLoadingMessage(
+                        i === 0
+                            ? (summaries.length === 0 ? 'Waking up AI model...' : 'Generating summary...')
+                            : `Summarizing report chunk ${i + 1}/${chunks.length}...`
+                    );
+
+                    const res = await fetch("https://api-inference.huggingface.co/models/Falconsai/medical_summarization", {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${import.meta.env.VITE_HUGGINGFACE_TOKEN}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            inputs: chunks[i],
+                            parameters: { max_length: 220, min_length: 50, do_sample: false },
+                        }),
+                    });
+
+                    const data = await res.json();
+
+                    if (data.error && data.error.toLowerCase().includes("loading")) {
+                        setLoadingMessage("Model loading, please wait...");
+                        await new Promise(r => setTimeout(r, 8000));
+                        attempts++;
+                        continue;
+                    }
+
+                    summaries.push(data[0]?.summary_text || "Could not summarize this chunk.");
+                    break;
+                } catch (err) {
+                    console.error("HF API Error:", err);
+                    break;
+                }
+            }
+        }
+
+        setAnalyzing(false);
+        setLoadingMessage('');
+        return summaries.filter(Boolean).join('\n\n') || "Model timeout or error — please try again.";
+    };
+
+    const handleTextSubmit = async (e) => {
+        if (e) e.stopPropagation();
+        if (!textInput.trim()) return;
+        
+        const summary = await summarizeReport(textInput);
+        
+        // Simple heuristic for deficiencies (to preserve deficiencies UI logic)
+        const lowerText = textInput.toLowerCase();
+        let extDeficiencies = [];
+        if (lowerText.includes('vitamin d') && lowerText.includes('low')) extDeficiencies.push('Low Vitamin D');
+        if (lowerText.includes('iron') && lowerText.includes('low')) extDeficiencies.push('Iron Deficiency');
+        if (lowerText.includes('b12') && lowerText.includes('low')) extDeficiencies.push('Low B12');
+        if (lowerText.includes('hemoglobin') && lowerText.includes('low')) extDeficiencies.push('Low Hemoglobin');
+
+        const newReport = {
+            id: Date.now(),
+            name: 'Pasted Medical Text',
+            date: formatDate(),
+            type: 'Text Document',
+            typeColor: '#34d399',
+            size: '-',
+            status: 'Analyzed',
+            summary: summary,
+            metrics: [],
+            deficiencies: extDeficiencies, // preserve deficiencies display logic
+            suggestions: [],
+            warnings: [],
+            healthScore: 85,
+        };
+        setReports(prev => [newReport, ...prev]);
+        setTextInput('');
+        setInputType('file'); // visually return to file 
+    };
 
     /* Core upload + AI extraction flow */
     const handleFile = async (file) => {
@@ -287,30 +415,51 @@ const ReportScanner = () => {
             }
 
             const data = await response.json();
+            
+            let finalSummary = data.summary || 'Analysis complete.';
+            if (data.extracted_text) {
+                // Fetch HF summary.
+                // Also provide extracted lab values as an explicit reference so the summarizer
+                // doesn't confuse numbers inside test names (e.g., "Vitamin D 25-OH").
+                setAnalyzing(true);
+                const markersContext = Array.isArray(data.markers) && data.markers.length
+                    ? data.markers.map(m => `- ${m.name}: ${m.value}`).join('\n')
+                    : '';
 
-            setTimeout(() => {
-                setAnalyzing(false);
-                setScanStep(0);
+                const markerContextBlock = markersContext
+                    ? `Important lab values (use exact numbers; do not change):\n${markersContext}\n\n`
+                    : '';
 
-                const type = getReportType(file.name);
-                const newReport = {
-                    id: Date.now(),
-                    name: file.name,
-                    date: formatDate(),
-                    type: type.label,
-                    typeColor: type.color,
-                    size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
-                    status: 'Analyzed',
-                    summary: data.summary || 'Analysis complete.',
-                    metrics: data.markers || [],
-                    deficiencies: data.deficiencies || [],
-                    suggestions: data.suggestions || [],
-                    warnings: data.warnings || [],
-                    healthScore: data.health_score || 85,
-                };
-                setReports(prev => [newReport, ...prev]);
-                if (inputRef.current) inputRef.current.value = '';
-            }, 400);
+                const summaryInput = `${markerContextBlock}Medical report text:\n${data.extracted_text}`;
+                const aiSummary = await summarizeReport(summaryInput);
+                if (aiSummary && aiSummary !== "Model timeout or error — please try again.") {
+                    finalSummary = aiSummary;
+                    if (markersContext) {
+                        finalSummary += `\n\nExtracted lab values:\n${markersContext}`;
+                    }
+                }
+            }
+
+            setScanStep(0);
+
+            const type = getReportType(file.name);
+            const newReport = {
+                id: Date.now(),
+                name: file.name,
+                date: formatDate(),
+                type: type.label,
+                typeColor: type.color,
+                size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+                status: 'Analyzed',
+                summary: finalSummary,
+                metrics: data.markers || [],
+                deficiencies: data.deficiencies || [],
+                suggestions: data.suggestions || [],
+                warnings: data.warnings || [],
+                healthScore: data.health_score || 85,
+            };
+            setReports(prev => [newReport, ...prev]);
+            if (inputRef.current) inputRef.current.value = '';
 
         } catch (err) {
             console.error('Report analysis error:', err);
@@ -384,25 +533,65 @@ const ReportScanner = () => {
                                         <div className="scan-ring ring-3" />
                                         <Activity size={32} className="scan-icon" />
                                     </div>
-                                    <h3 className="scan-title">Analyzing report with AI…</h3>
-                                    <p className="scan-step">{SCAN_STEPS[scanStep]}</p>
+                                    <h3 className="scan-title">{loadingMessage || 'Analyzing report with AI…'}</h3>
+                                    <p className="scan-step">{loadingMessage ? 'Interacting with Hugging Face...' : SCAN_STEPS[scanStep]}</p>
                                     <div className="scan-bar-wrap">
                                         <div className="scan-bar" style={{ animationDuration: '2.6s' }} />
                                     </div>
                                 </div>
                             ) : (
                                 /* Idle upload prompt */
-                                <div className="upload-prompt">
-                                    <div className="upload-circle">
-                                        <Upload size={36} />
+                                <div className="upload-prompt" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    
+                                    {/* Type Toggle Header */}
+                                    <div className="input-type-toggle" onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem', borderRadius: '12px', width: 'fit-content' }}>
+                                        <button 
+                                            className="hr-btn"
+                                            style={{ background: inputType === 'file' ? 'var(--accent-primary)' : 'transparent', color: inputType === 'file' ? '#fff' : 'var(--text-muted)', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px' }}
+                                            onClick={(e) => { e.stopPropagation(); setInputType('file'); }}
+                                        >
+                                            <Upload size={16} /> Upload File
+                                        </button>
+                                        <button 
+                                            className="hr-btn"
+                                            style={{ background: inputType === 'text' ? 'var(--accent-primary)' : 'transparent', color: inputType === 'text' ? '#fff' : 'var(--text-muted)', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px' }}
+                                            onClick={(e) => { e.stopPropagation(); setInputType('text'); }}
+                                        >
+                                            <FileText size={16} /> Paste Text
+                                        </button>
                                     </div>
-                                    <h3>Drag and drop your medical report here<br />or click to upload</h3>
-                                    <p className="upload-hint">Supports PDF, JPG, PNG · Up to 20 MB</p>
-                                    <div className="upload-badges">
-                                        <span className="file-badge">📄 PDF</span>
-                                        <span className="file-badge">🖼 Images</span>
-                                        <span className="file-badge">🩺 Medical Reports</span>
-                                    </div>
+
+                                    {inputType === 'file' ? (
+                                        <>
+                                            <div className="upload-circle">
+                                                <Upload size={36} />
+                                            </div>
+                                            <h3>Drag and drop your medical report here<br />or click to upload</h3>
+                                            <p className="upload-hint">Supports PDF, JPG, PNG · Up to 20 MB</p>
+                                            <div className="upload-badges">
+                                                <span className="file-badge">📄 PDF</span>
+                                                <span className="file-badge">🖼 Images</span>
+                                                <span className="file-badge">🩺 Medical Reports</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-paste-area" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <textarea 
+                                                value={textInput}
+                                                onChange={(e) => setTextInput(e.target.value)}
+                                                placeholder="Paste your medical report text here to generate an AI summary..."
+                                                style={{ width: '100%', minHeight: '160px', background: 'rgba(15,23,42,0.5)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '1rem', color: 'var(--text-primary)', fontSize: '0.95rem', resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
+                                            />
+                                            <button 
+                                                className="hr-btn hr-btn-upload" 
+                                                style={{ alignSelf: 'flex-end' }}
+                                                onClick={handleTextSubmit}
+                                                disabled={!textInput.trim() || analyzing}
+                                            >
+                                                <Lightbulb size={16} /> Summarize Report
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

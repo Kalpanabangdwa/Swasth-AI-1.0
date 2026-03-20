@@ -243,6 +243,9 @@ async def analyze_report(
         return {
             "filename": file.filename,
             "extracted_text_length": len(extracted_text),
+            # Keep enough of the extracted text for downstream summarization.
+            # (The analysis service itself still truncates for model token limits.)
+            "extracted_text": extracted_text[:12000],
             "markers": analysis_result["markers"],
             "deficiencies": analysis_result["deficiencies"],
             "warnings": analysis_result["warnings"],

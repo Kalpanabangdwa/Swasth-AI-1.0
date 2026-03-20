@@ -17,6 +17,7 @@ class AnalysisService:
     REFERENCE_RANGES = {
         "hemoglobin": {"min": 13.5, "max": 17.5, "unit": "g/dL"},
         "vitamin d": {"min": 30, "max": 100, "unit": "ng/mL"},
+        "vitamin b12": {"min": 200, "max": 900, "unit": "pg/mL"},
         "cholesterol": {"min": 0, "max": 200, "unit": "mg/dL"},
         "blood sugar": {"min": 70, "max": 99, "unit": "mg/dL"},
         "glucose": {"min": 70, "max": 99, "unit": "mg/dL"},
@@ -31,6 +32,9 @@ class AnalysisService:
         "vit d": "vitamin d",
         "vitd": "vitamin d",
         "vitamin-d": "vitamin d",
+        "vit b12": "vitamin b12",
+        "b12": "vitamin b12",
+        "cobalamin": "vitamin b12",
         "hb": "hemoglobin",
         "hgb": "hemoglobin",
         "chol": "cholesterol",
@@ -78,8 +82,9 @@ class AnalysisService:
             analysis_cache.set(extracted_text, result)
             return result
         
-        # Limit text to avoid token limits
-        snippet = extracted_text[:3000]
+        # Limit text to avoid token limits.
+        # Keep it relatively large so we don't miss markers near the end of the report.
+        snippet = extracted_text[:8000]
         
         # Build prompt
         prompt = self._build_analysis_prompt(snippet)
@@ -154,7 +159,7 @@ class AnalysisService:
             elif status == "high":
                 warnings.append(f"High {name}")
 
-            suggestions.extend(self._suggestions_for_marker(name_l, status))
+            suggestions.extend(self._suggestions_for_marker(name_l, status, m.get("num")))
 
         if not markers:
             warnings.append("Could not reliably detect lab markers from the extracted PDF text.")
@@ -195,7 +200,8 @@ class AnalysisService:
 
         patterns = [
             ("hemoglobin", r"\b(?:hemoglobin|hb|hgb)\b\s*[:\-]?\s*([0-9]{1,2}(?:\.[0-9]{1,2})?)\s*(g\/d?l|gm\/d?l|g\s*\/\s*d?l)?"),
-            ("vitamin d", r"\b(?:vitamin\s*d|25[-\s]?oh\s*vitamin\s*d|vit\s*d|vitd)\b\s*[:\-]?\s*([0-9]{1,3}(?:\.[0-9]{1,2})?)\s*(ng\/ml|ng\/m?l)?"),
+            ("vitamin d", r"\b(?:25[-\s]?oh\s*)?(?:vitamin\s*d|vit\s*d|vitd)(?:\s*(?:25[-\s]?oh|total))?\b[\s:=-]*([0-9]{1,3}(?:\.[0-9]{1,2})?)\s*(ng\/ml|ng\/m?l)?"),
+            ("vitamin b12", r"\b(?:vitamin\s*b12|vit\s*b12|b12|cobalamin)\b[\s:=-]*([0-9]{2,4}(?:\.[0-9]{1,2})?)\s*(pg\/ml|pmol\/l)?"),
             ("cholesterol", r"\b(?:total\s*cholesterol|cholesterol)\b\s*[:\-]?\s*([0-9]{2,4}(?:\.[0-9]{1,2})?)\s*(mg\/dl|mg\/d?l)?"),
             ("ldl cholesterol", r"\b(?:ldl(?:\s*cholesterol)?)\b\s*[:\-]?\s*([0-9]{2,4}(?:\.[0-9]{1,2})?)\s*(mg\/dl|mg\/d?l)?"),
             ("hdl cholesterol", r"\b(?:hdl(?:\s*cholesterol)?)\b\s*[:\-]?\s*([0-9]{2,4}(?:\.[0-9]{1,2})?)\s*(mg\/dl|mg\/d?l)?"),
@@ -233,7 +239,7 @@ class AnalysisService:
 
         return candidates
 
-    def _suggestions_for_marker(self, name: str, status: str) -> List[str]:
+    def _suggestions_for_marker(self, name: str, status: str, numeric_value: Optional[float] = None) -> List[str]:
         """
         Lightweight, non-LLM suggestions. Keep them actionable and safe.
         """
@@ -241,9 +247,31 @@ class AnalysisService:
             return []
 
         if name in {"vitamin d"} and status == "low":
-            return [
-                "Get 15–20 minutes of sunlight (if appropriate) and discuss Vitamin D supplementation with your doctor.",
+            # Add a bit more guidance based on severity (if we have the numeric value).
+            severity = None
+            if isinstance(numeric_value, (int, float)):
+                if numeric_value < 10:
+                    severity = "severe"
+                elif numeric_value < 20:
+                    severity = "moderate"
+                else:
+                    severity = "mild"
+
+            base = [
+                "Discuss Vitamin D supplementation with your clinician (especially if you have limited sun exposure).",
                 "Include Vitamin D rich foods (egg yolk, fortified milk, fatty fish).",
+            ]
+            if severity == "severe":
+                base.insert(0, "Your Vitamin D level appears severely low—follow your clinician’s guidance for repletion and re-testing.")
+            elif severity == "moderate":
+                base.insert(0, "Your Vitamin D level is low—consider a structured supplementation plan under clinician supervision and re-test later.")
+            else:
+                base.insert(0, "Consider safe sunlight exposure (if appropriate) and follow-up testing as recommended.")
+            return base
+        if name in {"vitamin b12", "b12"} and status == "low":
+            return [
+                "Include B12-rich foods (meat, fish, dairy, fortified cereals) or consider supplementation if vegetarian/vegan.",
+                "Discuss with your clinician to rule out absorption issues."
             ]
         if name in {"iron"} and status == "low":
             return [
@@ -290,14 +318,26 @@ class AnalysisService:
             
             # Extract numeric value
             value_str = marker.get("value", "")
-            numeric_value, unit = self._extract_numeric_value(value_str)
+            numeric_value, extracted_unit = self._extract_numeric_value(value_str)
+            
+            inferred_range = self._get_reference_range(normalized_name)
+            inferred_unit = inferred_range.split()[-1] if inferred_range else None
+            unit = extracted_unit or inferred_unit
+            
+            # Normalize display value to "number unit" so UI/charting don't accidentally
+            # pick up a number from the test name (e.g., "Vitamin D 25-OH").
+            if numeric_value is not None:
+                formatted_num = self._format_numeric_value(numeric_value)
+                normalized_value = f"{formatted_num} {unit}".strip()
+            else:
+                normalized_value = value_str
             
             # Determine status if not provided
             status = marker.get("status", "normal").lower()
             
             enhanced_marker = {
                 "name": normalized_name.title(),
-                "value": value_str,
+                "value": normalized_value,
                 "num": numeric_value,
                 "unit": unit,
                 "status": status,
@@ -496,6 +536,10 @@ Output ONLY valid JSON — no explanations, no text before or after the JSON:
   "suggestions": ["Eat spinach daily", "Take Vitamin D supplements", "Reduce oily food"]
 }}
 
+Rules for markers[].value:
+1. ONLY include the actual numeric lab value and its unit.
+2. Do not include numbers that belong to the test name (e.g., in "Vitamin D 25-OH", the "25" is part of the name—not the lab value).
+
 Medical Report Text:
 {text}
 [/INST]"""
@@ -512,20 +556,52 @@ Medical Report Text:
             return {}
     
     def _extract_numeric_value(self, value_str: str) -> Tuple[Optional[float], Optional[str]]:
-        """Extract numeric value and unit from string."""
-        # Pattern to match number with optional decimal and unit
-        pattern = r'([\d.]+)\s*([a-zA-Zµ/]+)?'
-        match = re.search(pattern, str(value_str))
-        
-        if match:
-            try:
-                numeric = float(match.group(1))
-                unit = match.group(2) if match.group(2) else None
-                return numeric, unit
-            except ValueError:
-                pass
-        
-        return None, None
+        """
+        Extract numeric value + unit from a marker "value" string.
+
+        Important: some reports include numbers inside the test name (e.g., "Vitamin D 25-OH").
+        If the model/regex mixes those into the value, we prefer the *last* numeric token.
+        """
+        s = str(value_str or "").strip()
+        if not s:
+            return None, None
+
+        # Normalize decimal comma.
+        s = s.replace(",", ".")
+        s_lower = s.lower()
+
+        unit = None
+        unit_patterns = [
+            (r"ng\s*\/?\s*m?l", "ng/mL"),
+            (r"pg\s*\/?\s*m?l", "pg/mL"),
+            (r"mg\s*\/?\s*d?l", "mg/dL"),
+            (r"g\s*\/?\s*d?l", "g/dL"),
+            (r"(?:µg|ug|mcg)\s*\/?\s*d?l", "µg/dL"),
+            (r"(?:mEq|meq)\s*\/?\s*l", "mEq/L"),
+            (r"mmol\s*\/?\s*l", "mmol/L"),
+        ]
+        for pat, canonical in unit_patterns:
+            if re.search(pat, s_lower):
+                unit = canonical
+                break
+
+        # Extract all numeric tokens and take the last one.
+        nums = re.findall(r"[-+]?\d+(?:\.\d+)?", s)
+        if not nums:
+            return None, unit
+
+        try:
+            return float(nums[-1]), unit
+        except ValueError:
+            return None, unit
+
+    def _format_numeric_value(self, numeric_value: float) -> str:
+        """Format numeric values for stable display (avoid float artifacts)."""
+        if numeric_value is None:
+            return ""
+        if abs(numeric_value - round(numeric_value)) < 1e-9:
+            return str(int(round(numeric_value)))
+        return f"{numeric_value:.2f}".rstrip("0").rstrip(".")
     
     def _get_reference_range(self, marker_name: str) -> Optional[str]:
         """Get reference range for a marker."""
