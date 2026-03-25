@@ -1,78 +1,95 @@
-# Swasth AI - Intelligent Health Assistant
+# 🌿 Swasth AI — Intelligent Health Assistant
 
-Swasth AI is a comprehensive health management platform combining a modern, high-performance React frontend with a robust FastAPI backend. It features an AI-powered chatbot, symptom checker, diet planner, and health dashboard.
+Swasth AI is a comprehensive AI-powered health management platform featuring:
+
+- 🤖 **AI Chatbot** — Real health assistance powered by Groq (LLaMA3)
+- 🩺 **Symptom Checker** — Identifies top 3 possible conditions with self-care steps
+- 🥗 **Smart Diet Planner** — 7-day personalised meal plans based on your profile, allergies & medical report deficiencies
+- 🔬 **Lab Report Scanner** — Upload PDF medical reports for AI analysis
+- 📊 **Health Dashboard** — Track calories, water, sleep and mood
+- 👤 **User Profiles** — Persistent profiles stored in cloud database (Supabase)
+
+---
+
+## 🏗️ Tech Stack
+
+| Layer           | Technology             |
+| --------------- | ---------------------- |
+| Frontend        | React + Vite           |
+| Backend         | FastAPI (Python)       |
+| Database        | PostgreSQL (Supabase)  |
+| AI              | Groq API (LLaMA3-8b)   |
+| Report Analysis | HuggingFace Mistral-7B |
+
+---
 
 ## 📂 Project Structure
 
-```bash
-swasth-ai/
-├── backend/                 # Python FastAPI Backend
-│   ├── main.py             # Entry point and API routes
-│   ├── venv/               # Virtual Environment
-│   └── requirements.txt    # Python dependencies
+```
+Updated/
+├── backend/          # FastAPI Python backend
+│   ├── main.py       # All API endpoints
+│   ├── models.py     # Database models
+│   ├── database.py   # DB connection
+│   ├── services/     # Business logic
+│   └── .env.example  # Environment variables template
 │
-└── frontend/                # React + Vite Frontend
+└── frontend/         # React + Vite frontend
     ├── src/
-    │   ├── components/     # Reusable UI components (Layout, Cards)
-    │   ├── pages/          # Main Application Pages
-    │   │   ├── Dashboard/  # Health Dashboard & Analytics
-    │   │   ├── Chat/       # AI Chatbot Interface
-    │   │   ├── Diet/       # Smart Diet Planner
-    │   │   ├── Symptoms/   # Symptom Checker
-    │   │   ├── Reports/    # Medical Report Scanner
-    │   │   └── Profile/    # User Profile & Settings
-    │   ├── context/        # React Context (User State)
-    │   └── App.jsx         # Main Router Setup
-    └── package.json        # Node dependencies
+    │   ├── pages/    # All page components
+    │   ├── components/
+    │   └── context/  # UserContext (global state)
+    └── package.json
 ```
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- Python 3.8+
+## 🚀 Quick Setup
+
+See `SETUP_GUIDE.txt` for detailed setup instructions (shared privately).
+
+### Requirements
+
+- Python 3.11+
 - Node.js 16+
+- Groq API key (free at console.groq.com)
+- Supabase account (free at supabase.com) OR use SQLite for local dev
 
-### 1. Backend Setup
-Navigate to the backend directory and activate the virtual environment:
-```bash
-cd backend
-# Windows
-venv\Scripts\activate
-# Mac/Linux
-source venv/bin/activate
+---
 
-# Install dependencies (if needed)
-pip install fastapi uvicorn
-```
+## ✨ Features
 
-Run the server:
-```bash
-python -m uvicorn main:app --reload --port 8000
-```
+### AI Chat Assistant
 
-### 2. Frontend Setup
-Navigate to the frontend directory and install dependencies:
-```bash
-cd frontend
-npm install
+Real-time health guidance using Groq LLaMA3. Remembers conversation history and personalises responses based on your health profile.
 
-# Install UI Enhancements (Optional but recommended)
-npm install lucide-react framer-motion recharts
-```
+### Smart Diet Planner
 
-Run the development server:
-```bash
-npm run dev
-```
+Generates a full 7-day meal plan that:
 
-## ✨ Key Features
-- **AI Chatbot**: Intelligent disease awareness and care guides.
-- **Symptom Checker**: Interactive body-map based symptom analysis.
-- **Diet Planner**: Custom meal plans based on goals (Loss/Gain) and preferences.
-- **Report Scanner**: Analyze medical reports (mock integration).
-- **Dashboard**: Real-time health overview with animations.
+- Calculates your personal calorie target (BMR × activity level)
+- Filters out your allergens automatically
+- Adds foods that address deficiencies found in your medical reports
+- Adjusts for medical conditions
 
-## 🛠️ Tech Stack
-- **Frontend**: React, Vite, CSS Modules (Glassmorphism design)
-- **Backend**: FastAPI, Python
-- **Design**: Custom CSS variables for Dark Mode & Premium Aesthetics
+### Symptom Checker
+
+Select symptoms by body area → get top 3 possible conditions with:
+
+- Confidence score
+- Self-care steps
+- When to see a doctor
+- Emergency flags
+
+### Lab Report Scanner
+
+Upload any PDF medical report → AI extracts and analyses health markers, identifies deficiencies, and gives plain-language explanations.
+
+---
+
+## 🔒 Security Notes
+
+- Never commit your `.env` file
+- Use `.env.example` as a template
+- Rotate API keys regularly
+- All user data stored securely in Supabase PostgreSQL

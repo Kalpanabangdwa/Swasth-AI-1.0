@@ -4,10 +4,15 @@ python-multipart
 httpx
 pymupdf
 requests
-pydantic
+pydantic[email]
 python-dotenv
 sqlalchemy
 cryptography
 reportlab
 cachetools
 email-validator
+
+# Auth additions
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
